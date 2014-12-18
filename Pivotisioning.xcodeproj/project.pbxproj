@@ -12,6 +12,9 @@
 		473329DF1A41ED6300D366F2 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 473329DE1A41ED6300D366F2 /* Images.xcassets */; };
 		473329E21A41ED6300D366F2 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = 473329E01A41ED6300D366F2 /* MainMenu.xib */; };
 		473329EE1A41ED6300D366F2 /* PivotisioningTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 473329ED1A41ED6300D366F2 /* PivotisioningTests.m */; };
+		473329F81A42234D00D366F2 /* Build.sh in Resources */ = {isa = PBXBuildFile; fileRef = 473329F71A42234D00D366F2 /* Build.sh */; };
+		473329FA1A434AED00D366F2 /* Provisioning.sh in Resources */ = {isa = PBXBuildFile; fileRef = 473329F91A434AED00D366F2 /* Provisioning.sh */; };
+		473329FD1A434CFC00D366F2 /* XMLReader.m in Sources */ = {isa = PBXBuildFile; fileRef = 473329FC1A434CFC00D366F2 /* XMLReader.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -35,6 +38,10 @@
 		473329E71A41ED6300D366F2 /* PivotisioningTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PivotisioningTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		473329EC1A41ED6300D366F2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		473329ED1A41ED6300D366F2 /* PivotisioningTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PivotisioningTests.m; sourceTree = "<group>"; };
+		473329F71A42234D00D366F2 /* Build.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Build.sh; sourceTree = "<group>"; };
+		473329F91A434AED00D366F2 /* Provisioning.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = Provisioning.sh; sourceTree = "<group>"; };
+		473329FB1A434CFC00D366F2 /* XMLReader.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = XMLReader.h; sourceTree = "<group>"; };
+		473329FC1A434CFC00D366F2 /* XMLReader.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = XMLReader.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -81,6 +88,10 @@
 				473329DE1A41ED6300D366F2 /* Images.xcassets */,
 				473329E01A41ED6300D366F2 /* MainMenu.xib */,
 				473329D71A41ED6300D366F2 /* Supporting Files */,
+				473329F71A42234D00D366F2 /* Build.sh */,
+				473329F91A434AED00D366F2 /* Provisioning.sh */,
+				473329FB1A434CFC00D366F2 /* XMLReader.h */,
+				473329FC1A434CFC00D366F2 /* XMLReader.m */,
 			);
 			path = Pivotisioning;
 			sourceTree = "<group>";
@@ -192,7 +203,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				473329DF1A41ED6300D366F2 /* Images.xcassets in Resources */,
+				473329F81A42234D00D366F2 /* Build.sh in Resources */,
 				473329E21A41ED6300D366F2 /* MainMenu.xib in Resources */,
+				473329FA1A434AED00D366F2 /* Provisioning.sh in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -211,6 +224,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				473329DD1A41ED6300D366F2 /* AppDelegate.m in Sources */,
+				473329FD1A434CFC00D366F2 /* XMLReader.m in Sources */,
 				473329DA1A41ED6300D366F2 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
