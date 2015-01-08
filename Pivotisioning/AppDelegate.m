@@ -9,6 +9,7 @@
 #import "AppDelegate.h"
 
 static NSString * const kProvisioningProfileListPath = @"~/Library/MobileDevice/Provisioning Profiles";
+static NSString * const kArchivesPath = @"~/Library/Developer/Xcode/Archives";
 
 @interface AppDelegate ()
 
@@ -26,13 +27,16 @@ static NSString * const kProvisioningProfileListPath = @"~/Library/MobileDevice/
 
 @property (strong) NSString *provisioningProfileName;
 
+@property (assign) NSInteger provisioningProfileIndex;
+
 @end
 
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     // Insert code here to initialize your application
-    [self listOfProvisioningProfiles];
+    [self initialSetup];
+    [self loadProvisioningProfiles];
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
@@ -42,25 +46,29 @@ static NSString * const kProvisioningProfileListPath = @"~/Library/MobileDevice/
 #pragma mark - IBActions
 
 - (IBAction)selectArchiveClicked:(NSButtonCell *)sender {
-    NSURL *archiveURL = [self selectArchiveFile];
-    if (archiveURL) {
-        self.archiveFilePath = archiveURL;
-        NSString *stringURL = [[self archiveStringPath] stringByDeletingLastPathComponent];
-        self.archiveDirectoryPath = [NSURL URLWithString:stringURL];
-        self.archiveLabel.stringValue = [self.archiveFilePath lastPathComponent];
-        if (self.sameAsArchiveButton.state == NSOnState) {
-            [self setDestinationPathFromURL:self.archiveFilePath];
+    __weak typeof(self) weakSelf = self;
+    [self selectArchiveFileSuccess:^(NSURL *archiveURL) {
+        if (archiveURL) {
+            weakSelf.archiveFilePath = archiveURL;
+            NSString *stringURL = [[weakSelf archiveStringPath] stringByDeletingLastPathComponent];
+            weakSelf.archiveDirectoryPath = [NSURL URLWithString:stringURL];
+            weakSelf.archiveLabel.stringValue = [weakSelf.archiveFilePath lastPathComponent];
+            if (weakSelf.sameAsArchiveButton.state == NSOnState) {
+                [weakSelf setDestinationPathFromURL:weakSelf.archiveFilePath];
+            }
         }
-    }
+    }];
 }
 
 - (IBAction)archiveDirectoryButtonClicked:(NSButton *)sender {
-    NSURL *selectedURL = [self selectArchiveDirectory];
-    if (selectedURL) {
-        self.archiveDirectoryPath  = selectedURL;
-        [self.sameAsArchiveButton setState:NSOffState];
-        [self setDestinationPathFromURL:self.archiveDirectoryPath];
-    }
+    __weak typeof(self) weakSelf = self;
+    [self selectArchiveDirectorySuccess:^(NSURL *selectedURL) {
+        if (selectedURL) {
+            weakSelf.archiveDirectoryPath  = selectedURL;
+            [weakSelf.sameAsArchiveButton setState:NSOffState];
+            [weakSelf setDestinationPathFromURL:weakSelf.archiveDirectoryPath];
+        }
+    }];
 }
 
 - (IBAction)createButtonClicked:(id)sender {
@@ -98,27 +106,49 @@ static NSString * const kProvisioningProfileListPath = @"~/Library/MobileDevice/
 
 #pragma mark - Private
 
-- (void)listOfProvisioningProfiles {
+- (void)initialSetup {
+    NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = nil;
+    if (paths.count > 0) {
+        documentsDirectory = paths.firstObject;
+    }
+    [self.destinationPathControl setURL:[NSURL URLWithString:documentsDirectory]];
+}
+
+- (void)loadProvisioningProfiles {
+    [self.provisioningPopUpButton removeAllItems];
+    [self.provisioningPopUpButton addItemWithTitle:@"-- Select --"];
+
+    self.provisioningProfileIndex = 0;
+    [self nextProvisioningProfileName];
+}
+
+- (void)nextProvisioningProfileName {
+    NSArray *provisioningProfiles = [self listOfProvisioningProfiles];
+    if (self.provisioningProfileIndex >= provisioningProfiles.count) return;
+    
+    NSString *provisioning = provisioningProfiles[self.provisioningProfileIndex];
+    NSString *path = [[kProvisioningProfileListPath stringByExpandingTildeInPath] stringByAppendingPathComponent:provisioning];
+    
+    __weak typeof(self) weakSelf = self;
+    [self extractDataFromProvisioningProfileAtPath:path completionBlock:^(NSDictionary *data) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            weakSelf.provisioningProfileIndex++;
+            [weakSelf nextProvisioningProfileName];
+            if (data) {
+                [weakSelf.provisioningPopUpButton addItemWithTitle:data[@"Name"]];
+            }
+        });
+    }];
+}
+
+- (NSArray *)listOfProvisioningProfiles {
     NSFileManager *fileManager = [NSFileManager defaultManager];
     NSError *error = nil;
     NSArray *dirContents = [fileManager contentsOfDirectoryAtPath:[kProvisioningProfileListPath stringByExpandingTildeInPath] error:&error];
     NSPredicate *fltr = [NSPredicate predicateWithFormat:@"self ENDSWITH '.mobileprovision'"];
-    NSArray *onlyProvisioning = [dirContents filteredArrayUsingPredicate:fltr];
-    [self.provisioningPopUpButton removeAllItems];
-    [self.provisioningPopUpButton addItemWithTitle:@"-- Select --"];
     
-    __weak typeof(self) weakSelf = self;
-    for (NSInteger i=0;i<onlyProvisioning.count;i++) {
-        NSString *provisioning = onlyProvisioning[i];
-        NSString *path = [[kProvisioningProfileListPath stringByExpandingTildeInPath] stringByAppendingPathComponent:provisioning];
-        [self extractDataFromProvisioningProfileAtPath:path completionBlock:^(NSDictionary *data) {
-            dispatch_async(dispatch_get_main_queue(), ^{
-                if (data) {
-                    [weakSelf.provisioningPopUpButton addItemWithTitle:data[@"Name"]];
-                }
-            });
-        }];
-    }
+    return [dirContents filteredArrayUsingPredicate:fltr];
 }
 
 - (void)setDestinationPathFromURL:(NSURL *)url {
@@ -154,12 +184,14 @@ static NSString * const kProvisioningProfileListPath = @"~/Library/MobileDevice/
     [task setTerminationHandler:^(NSTask *task) {
         [weakSelf stopAnimations];
         
-        NSString *output = [[NSString alloc] initWithData: [[outPipe fileHandleForReading] readDataToEndOfFile] encoding: NSUTF8StringEncoding];
+        NSString *output = [[NSString alloc] initWithData:[[outPipe fileHandleForReading] readDataToEndOfFile] encoding: NSUTF8StringEncoding];
         if ([output rangeOfString:@"EXPORT FAILED"].location != NSNotFound) {
-            NSString *error = [[NSString alloc] initWithData: [[errPipe fileHandleForReading] readDataToEndOfFile] encoding: NSUTF8StringEncoding];
+            NSString *error = [[NSString alloc] initWithData:[[errPipe fileHandleForReading] readDataToEndOfFile] encoding: NSUTF8StringEncoding];
             if (error) {
                 [weakSelf displayBuildError:error];
             }
+        } else {
+            [weakSelf displayBuildSuccessMessage];
         }
      }];
     [task launch];
@@ -271,22 +303,45 @@ static NSString * const kProvisioningProfileListPath = @"~/Library/MobileDevice/
     [alert runModal];
 }
 
-- (NSURL *)selectArchiveFile {
-    NSOpenPanel *panel = [NSOpenPanel openPanel];
+- (void)displayBuildSuccessMessage {
+    dispatch_async(dispatch_get_main_queue(), ^{
+        NSAlert *alert = [NSAlert new];
+        [alert setAlertStyle:NSInformationalAlertStyle];
+        [alert setMessageText:@"You are done!"];
+        [alert setInformativeText:@"IPA created successfully"];
+        [alert runModal];
+    });
+}
+
+- (void)selectArchiveFileSuccess:(void (^)(NSURL *url))succes {
+    NSString *url = [kArchivesPath stringByExpandingTildeInPath];
+    NSURL *archivesURL = [NSURL URLWithString:url];
+    __block NSOpenPanel *panel = [NSOpenPanel openPanel];
     [panel setAllowsMultipleSelection:NO];
     [panel setCanChooseDirectories:NO];
     [panel setCanChooseFiles:YES];
-    if ([panel runModal] != NSFileHandlingPanelOKButton) return nil;
-    return [[panel URLs] lastObject];
+    [panel setDirectoryURL:archivesURL];
+    [panel beginSheetModalForWindow:self.window completionHandler:^(NSInteger result) {
+        if (result == NSFileHandlingPanelOKButton) {
+            if (succes) {
+                succes(panel.URLs.lastObject);
+            }
+        }
+    }];
 }
 
-- (NSURL *)selectArchiveDirectory {
+- (void)selectArchiveDirectorySuccess:(void (^)(NSURL *url))succes {
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     [panel setAllowsMultipleSelection:NO];
     [panel setCanChooseDirectories:YES];
     [panel setCanChooseFiles:NO];
-    if ([panel runModal] != NSFileHandlingPanelOKButton) return nil;
-    return [[panel URLs] lastObject];
+    [panel beginSheetModalForWindow:self.window completionHandler:^(NSInteger result) {
+        if (result == NSFileHandlingPanelOKButton) {
+            if (succes) {
+                succes(panel.URLs.lastObject);
+            }
+        }
+    }];
 }
 
 @end

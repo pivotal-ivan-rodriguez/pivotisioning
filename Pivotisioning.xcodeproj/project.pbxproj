@@ -412,6 +412,7 @@
 				473329F31A41ED6300D366F2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		473329F41A41ED6300D366F2 /* Build configuration list for PBXNativeTarget "PivotisioningTests" */ = {
 			isa = XCConfigurationList;
@@ -420,6 +421,7 @@
 				473329F61A41ED6300D366F2 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};
